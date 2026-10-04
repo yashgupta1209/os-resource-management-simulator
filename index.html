@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OS Resource & Process Management Simulator | Review 2 Mid-Progress</title>
+  <meta name="description" content="Interactive Operating System Resource and Process Management Simulator implementing Banker's Algorithm, Safe-State Analysis, and Deadlock Detection.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Top Navigation / Header -->
+  <header class="navbar">
+    <div class="nav-brand">
+      <div class="logo-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+        </svg>
+      </div>
+      <div>
+        <h1 class="nav-title">OS Resource & Process Management Simulator</h1>
+        <p class="nav-subtitle">Operating Systems Project • Mid-Progress Demonstration (Review 2)</p>
+      </div>
+    </div>
+
+    <div class="nav-meta">
+      <div class="team-badge" id="teamBadgeBtn" title="Click to view team info & faculty details">
+        <span class="pulse-dot"></span>
+        <span>Team: <strong>Yash</strong> (24BCE0759) • <strong>Shaunak</strong> (24BCE2058) • <strong>Sapandeep</strong> (24BCE0960)</span>
+      </div>
+      <button class="btn btn-outline" id="openDocsBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        Review 2 Report & Viva Guide
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+    <!-- Preset Banner and Global Controls -->
+    <section class="control-strip">
+      <div class="strip-section">
+        <label class="section-label">⚡ Preloaded Test Scenarios:</label>
+        <div class="preset-buttons">
+          <button class="preset-btn active" data-preset="silberschatz" title="Classic 5 processes & 3 resources textbook safe state">
+            Classic Textbook (Safe)
+          </button>
+          <button class="preset-btn" data-preset="unsafe-demo" title="Unsafe state leading to potential deadlock">
+            Unsafe State Scenario
+          </button>
+          <button class="preset-btn" data-preset="deadlock-multi" title="Actual deadlock with multiple resource instances">
+            Deadlock Detected
+          </button>
+          <button class="preset-btn" data-preset="complex-4x4" title="4 processes with 4 resource types (CPU, RAM, Disk, Net)">
+            4 Processes × 4 Resources
+          </button>
+          <button class="preset-btn" data-preset="custom" title="Clear or configure your own matrices">
+            Custom / Clear
+          </button>
+        </div>
+      </div>
+
+      <div class="strip-section strip-actions">
+        <button class="btn btn-primary" id="runSafetyBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          Run Banker's Safety Check
+        </button>
+        <button class="btn btn-secondary" id="stepByStepBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          Step-by-Step Visualizer
+        </button>
+        <button class="btn btn-warning" id="requestModalBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          Simulate Resource Request
+        </button>
+        <button class="btn btn-danger" id="detectDeadlockBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+          Run Deadlock Detection
+        </button>
+      </div>
+    </section>
+
+    <!-- Status Overview & Safe Sequence Banner -->
+    <section class="status-grid">
+      <div class="status-card" id="systemStatusCard">
+        <div class="status-header">
+          <span class="status-title">SYSTEM SAFETY STATE</span>
+          <span class="badge" id="safetyBadge">SAFE STATE</span>
+        </div>
+        <div class="status-body">
+          <h2 class="status-value" id="statusMessage">System is currently in a Safe State</h2>
+          <p class="status-desc" id="statusSubtext">All processes can execute to completion without encountering a deadlock.</p>
+        </div>
+      </div>
+
+      <div class="status-card sequence-card">
+        <div class="status-header">
+          <span class="status-title">VALID SAFE EXECUTION SEQUENCE</span>
+          <span class="badge badge-purple" id="sequenceBadge">Banker's Sequence</span>
+        </div>
+        <div class="status-body">
+          <div class="sequence-pipeline" id="sequencePipeline">
+            <!-- Pipeline nodes rendered dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <div class="status-card stats-mini-card">
+        <div class="status-header">
+          <span class="status-title">SYSTEM METRICS</span>
+          <span class="badge badge-blue">Live</span>
+        </div>
+        <div class="stats-mini-content">
+          <div class="metric-item">
+            <span class="metric-label">Active Processes</span>
+            <span class="metric-number" id="metricProcessCount">5</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Resource Types</span>
+            <span class="metric-number" id="metricResourceCount">3</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Available Vector</span>
+            <span class="metric-number code-font" id="metricAvailableVector">[3, 3, 2]</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Two-Column Workspace Layout -->
+    <div class="workspace-grid">
+      <!-- LEFT COLUMN: Module 1 - Process & Resource Management (Yash Gupta) -->
+      <section class="card module-card">
+        <div class="card-header">
+          <div class="header-with-badge">
+            <span class="member-tag tag-yash">Module 1 • Yash Gupta</span>
+            <h2 class="card-title">Process & Resource Management</h2>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-sm btn-outline" id="addProcessBtn">+ Add Process</button>
+            <button class="btn btn-sm btn-outline" id="addResourceBtn">+ Add Resource</button>
+          </div>
+        </div>
+
+        <!-- System Resources Configuration Bar -->
+        <div class="resource-summary-box">
+          <div class="box-title">System Resources & Availability:</div>
+          <div class="resource-chips" id="resourceChipsContainer">
+            <!-- Dynamically populated: e.g. R0 (A): Total 10 | Alloc 7 | Avail 3 -->
+          </div>
+        </div>
+
+        <!-- Interactive Process Allocation Matrix Table -->
+        <div class="table-wrapper">
+          <table class="matrix-table" id="processMatrixTable">
+            <thead>
+              <tr>
+                <th rowspan="2">PID</th>
+                <th rowspan="2">Process State</th>
+                <th colspan="3" id="thAllocCol">Allocation Matrix</th>
+                <th colspan="3" id="thMaxCol">Max Matrix</th>
+                <th colspan="3" id="thNeedCol">Need Matrix (Max - Alloc)</th>
+                <th rowspan="2">Quick Actions</th>
+              </tr>
+              <tr id="subHeaderRow">
+                <!-- Subheaders: A, B, C for each matrix -->
+              </tr>
+            </thead>
+            <tbody id="matrixTableBody">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+        </div>
+        <div class="table-footnote">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          Values can be edited directly. The <strong>Need Matrix</strong> updates automatically (<span class="code-font">Need[i][j] = Max[i][j] - Allocation[i][j]</span>).
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN: Module 2 (Shaunak) & Module 3 (Sapandeep) -->
+      <section class="card module-card">
+        <div class="card-header">
+          <div class="header-with-badge">
+            <span class="member-tag tag-shaunak">Module 2 • Shaunak Dutta</span>
+            <span class="member-tag tag-sapandeep">Module 3 • Sapandeep Kour</span>
+            <h2 class="card-title">Deadlock Engine & Step-by-Step Visualizer</h2>
+          </div>
+          <div class="header-actions">
+            <span class="status-indicator live" id="engineStatus">Ready</span>
+          </div>
+        </div>
+
+        <!-- Step-by-Step Stepper Component -->
+        <div class="stepper-panel" id="stepperPanel">
+          <div class="stepper-controls">
+            <div class="step-indicator">
+              <span>Simulation Step: </span>
+              <strong id="currentStepText">0 of 0</strong>
+            </div>
+            <div class="stepper-btn-group">
+              <button class="btn btn-sm btn-outline" id="stepPrevBtn" disabled>◀ Prev Step</button>
+              <button class="btn btn-sm btn-primary" id="stepNextBtn" disabled>Next Step ▶</button>
+              <button class="btn btn-sm btn-secondary" id="stepAutoBtn" disabled>Auto Play ⏩</button>
+              <button class="btn btn-sm btn-outline" id="stepResetBtn" disabled>Reset</button>
+            </div>
+          </div>
+
+          <!-- Live Work and Finish Vectors Display -->
+          <div class="vectors-display">
+            <div class="vector-card">
+              <div class="vector-title">Work Vector (Simulated Available):</div>
+              <div class="vector-values code-font" id="workVectorDisplay">[ - ]</div>
+            </div>
+            <div class="vector-card">
+              <div class="vector-title">Finish Status Array:</div>
+              <div class="finish-chips" id="finishArrayDisplay">
+                <!-- Chips for Finish[P0]... -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Step Reasoning Box -->
+          <div class="step-explanation-box" id="stepExplanationBox">
+            <div class="box-icon">💡</div>
+            <div class="box-content">
+              <strong id="stepTitle">Banker's Algorithm Ready</strong>
+              <p id="stepDescription">Click "Run Banker's Safety Check" or "Step-by-Step Visualizer" to trace each step of safe state evaluation and work vector evolution.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Request/Release Simulation Card -->
+        <div class="subcard">
+          <div class="subcard-header">
+            <h3>Resource Request Algorithm Tester</h3>
+            <span class="subcard-badge">Safety Evaluation</span>
+          </div>
+          <p class="subcard-desc">Simulate what happens when a process requests resources in real-time:</p>
+          <div class="request-form-inline">
+            <div class="form-group-inline">
+              <label for="reqProcessSelect">Process:</label>
+              <select id="reqProcessSelect" class="select-input"></select>
+            </div>
+            <div class="form-group-inline" id="requestInputsContainer">
+              <!-- Dynamically generated inputs for each resource -->
+            </div>
+            <button class="btn btn-sm btn-warning" id="executeRequestBtn">Evaluate & Allocate</button>
+          </div>
+          <div class="request-result-banner" id="requestResultBanner" style="display:none;"></div>
+        </div>
+
+        <!-- Multi-Resource Deadlock Detection Card -->
+        <div class="subcard">
+          <div class="subcard-header">
+            <h3>Multi-Instance Deadlock Detection</h3>
+            <span class="subcard-badge">Detection Algorithm</span>
+          </div>
+          <p class="subcard-desc">Identifies if currently allocated processes are blocked in an unresolvable cyclic wait:</p>
+          <div class="deadlock-result-box" id="deadlockResultBox">
+            <span class="icon">🔍</span>
+            <div id="deadlockResultText">Click "Run Deadlock Detection" to analyze the current system state.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Bottom OS Audit Console / Execution Log -->
+    <section class="card console-card">
+      <div class="card-header">
+        <div class="console-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+          OS Execution & Algorithm Audit Log
+        </div>
+        <div class="console-actions">
+          <button class="btn btn-xs btn-outline" id="clearLogsBtn">Clear Logs</button>
+          <button class="btn btn-xs btn-outline" id="exportStateBtn">Export Simulation State (JSON)</button>
+        </div>
+      </div>
+      <div class="console-body" id="consoleBody">
+        <div class="log-entry log-sys"><span class="log-time">[00:00:00]</span> [SYSTEM] OS Resource & Process Management Simulator initialized.</div>
+        <div class="log-entry log-info"><span class="log-time">[00:00:00]</span> [MODULE 1] Initialized 5 processes and 3 resources (Silberschatz Preset).</div>
+        <div class="log-entry log-info"><span class="log-time">[00:00:00]</span> [MODULE 2] Banker's algorithm and Deadlock Detection ready.</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL: Resource Request Simulator Details -->
+  <dialog class="custom-modal" id="requestModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Simulate Process Resource Request</h2>
+        <button class="modal-close" id="closeReqModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-sub">According to Banker's Resource-Request Algorithm:</p>
+        <ol class="rule-list">
+          <li>If <span class="code-font">Request[i] ≤ Need[i]</span>, proceed; otherwise raise error (exceeded maximum claim).</li>
+          <li>If <span class="code-font">Request[i] ≤ Available</span>, proceed; otherwise process must wait (insufficient resources).</li>
+          <li>Pretend to allocate: <span class="code-font">Available = Available - Request</span>, <span class="code-font">Allocation = Allocation + Request</span>, <span class="code-font">Need = Need - Request</span>.</li>
+          <li>Run Safety Algorithm. If safe, grant request permanently; if unsafe, roll back to original state.</li>
+        </ol>
+
+        <div class="modal-form-grid">
+          <div class="form-group">
+            <label for="modalReqProcess">Select Requesting Process:</label>
+            <select id="modalReqProcess" class="select-input"></select>
+          </div>
+          <div class="form-group">
+            <label>Request Vector:</label>
+            <div class="vector-inputs" id="modalVectorInputs"></div>
+          </div>
+        </div>
+
+        <div class="modal-status-box" id="modalStatusBox" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="cancelReqModal">Close</button>
+        <button class="btn btn-primary" id="confirmReqModal">Execute Banker's Request Check</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- MODAL: Add Process -->
+  <dialog class="custom-modal" id="addProcessModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add New Process</h2>
+        <button class="modal-close" id="closeAddProcModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="newProcName">Process Name / Identifier:</label>
+          <input type="text" id="newProcName" class="text-input" placeholder="e.g. P5">
+        </div>
+        <div class="form-group">
+          <label>Max Demand (for each resource):</label>
+          <div class="vector-inputs" id="newProcMaxInputs"></div>
+        </div>
+        <div class="form-group">
+          <label>Initial Allocation (must be ≤ Max and ≤ Available):</label>
+          <div class="vector-inputs" id="newProcAllocInputs"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="cancelAddProcModal">Cancel</button>
+        <button class="btn btn-primary" id="confirmAddProcModal">Create Process</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- MODAL: Add Resource -->
+  <dialog class="custom-modal" id="addResourceModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add New Resource Type</h2>
+        <button class="modal-close" id="closeAddResModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="newResName">Resource Name:</label>
+          <input type="text" id="newResName" class="text-input" placeholder="e.g. D or Network_Bandwidth">
+        </div>
+        <div class="form-group">
+          <label for="newResTotal">Total System Instances:</label>
+          <input type="number" id="newResTotal" class="text-input" min="1" value="5">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="cancelAddResModal">Cancel</button>
+        <button class="btn btn-primary" id="confirmAddResModal">Add Resource</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- MODAL: Review 2 Report & Viva Cheat-Sheet -->
+  <dialog class="custom-modal wide-modal" id="docsModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Review 2 Mid-Progress Report & Viva Defense Guide</h2>
+        <button class="modal-close" id="closeDocsModal">&times;</button>
+      </div>
+      <div class="modal-body doc-modal-body">
+        <div class="doc-tabs">
+          <button class="doc-tab active" data-tab="tab-progress">Mid-Progress Accomplished</button>
+          <button class="doc-tab" data-tab="tab-modules">Module Implementation</button>
+          <button class="doc-tab" data-tab="tab-testcases">Test Cases & Verification</button>
+          <button class="doc-tab" data-tab="tab-viva">Viva / Faculty Q&A Guide</button>
+        </div>
+
+        <div class="doc-tab-content active" id="tab-progress">
+          <h3>1. Mid-Progress Review Summary (Review 2 Status)</h3>
+          <p>Unlike Review 1 where the project was at the conceptual and mathematical planning stage, for <strong>Review 2</strong> the core simulation engine, matrix data structures, Banker's Safety Algorithm, and interactive visual interface have been <strong>fully built and verified</strong>.</p>
+          <div class="doc-grid-3">
+            <div class="doc-metric-box">
+              <h4>Module 1: Process & Resource</h4>
+              <p class="doc-status-tag done">100% Completed</p>
+              <ul>
+                <li>Process creation, deletion, state tracking</li>
+                <li>Dynamic Allocation, Max, Need & Available matrices</li>
+                <li>Matrix auto-recalculation upon edits</li>
+              </ul>
+            </div>
+            <div class="doc-metric-box">
+              <h4>Module 2: Deadlock & Safety</h4>
+              <p class="doc-status-tag done">100% Completed</p>
+              <ul>
+                <li>Banker's Safety Algorithm (<span class="code-font">O(m × n²)</span>)</li>
+                <li>Resource-Request Safety Evaluation & Rollback</li>
+                <li>Multi-instance Deadlock Detection algorithm</li>
+              </ul>
+            </div>
+            <div class="doc-metric-box">
+              <h4>Module 3: Visual Dashboard</h4>
+              <p class="doc-status-tag done">100% Completed</p>
+              <ul>
+                <li>Interactive matrix editing with live recalculation</li>
+                <li>Step-by-step visualizer with Work/Finish tracking</li>
+                <li>Safe sequence pipeline & OS audit console</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="doc-tab-content" id="tab-modules">
+          <h3>2. Detailed Module Breakdown & Team Responsibilities</h3>
+          <div class="member-detail">
+            <h4>Member 1: Yash Gupta (24BCE0759) – Process & Resource Management</h4>
+            <p><strong>Responsibilities & Achievements:</strong> Developed the core data structures and management functions for processes and system resources. Implemented state tracking (<span class="code-font">READY</span>, <span class="code-font">RUNNING</span>, <span class="code-font">WAITING</span>, <span class="code-font">TERMINATED</span>). Implemented the dynamic calculation of the Need matrix where <span class="code-font">Need[i][j] = Max[i][j] - Allocation[i][j]</span>, and enforced resource invariant: <span class="code-font">Available[j] = Total[j] - ∑ Allocation[i][j]</span>.</p>
+          </div>
+          <div class="member-detail">
+            <h4>Member 2: Shaunak Dutta (24BCE2058) – Deadlock & Algorithm Module</h4>
+            <p><strong>Responsibilities & Achievements:</strong> Implemented the complete algorithmic suite:</p>
+            <ul>
+              <li><strong>Safety Algorithm:</strong> Maintains Work vector (initialized to Available) and Finish boolean array. Finds process Pi where <span class="code-font">Finish[i] == false</span> and <span class="code-font">Need[i] ≤ Work</span>. Updates <span class="code-font">Work = Work + Allocation[i]</span> and sets <span class="code-font">Finish[i] = true</span> until all processes finish or an unsafe state is found.</li>
+              <li><strong>Resource-Request Algorithm:</strong> Validates against Need and Available bounds, performs tentative allocation, tests safety, and rolls back if unsafe.</li>
+              <li><strong>Deadlock Detection:</strong> Implements detection for multiple instances of resources using allocation and unsatisfied requests.</li>
+            </ul>
+          </div>
+          <div class="member-detail">
+            <h4>Member 3: Sapandeep Kour (24BCE0960) – Frontend & Visualization</h4>
+            <p><strong>Responsibilities & Achievements:</strong> Designed the interactive dashboard, responsive layout, real-time matrix tables with inline editable inputs, safe sequence visual pipeline, live status indicators, step-by-step visual stepper, and the real-time OS audit log.</p>
+          </div>
+        </div>
+
+        <div class="doc-tab-content" id="tab-testcases">
+          <h3>3. Test Cases & Verification Results</h3>
+          <table class="doc-table">
+            <thead>
+              <tr>
+                <th>Test Case ID</th>
+                <th>Scenario Description</th>
+                <th>Input State</th>
+                <th>Expected Result</th>
+                <th>Simulator Output / Verification</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>TC-01</strong></td>
+                <td>Standard Silberschatz Safe State</td>
+                <td>5 Processes (P0-P4), 3 Resources (A=10, B=5, C=7). Available = [3, 3, 2]</td>
+                <td>SAFE State</td>
+                <td><strong class="color-safe">SAFE</strong>. Valid safe sequence generated: <span class="code-font">P1 ➔ P3 ➔ P4 ➔ P0 ➔ P2</span></td>
+              </tr>
+              <tr>
+                <td><strong>TC-02</strong></td>
+                <td>Safe Resource Request</td>
+                <td>From TC-01, P1 requests Request = [1, 0, 2]</td>
+                <td>Request granted; system remains safe</td>
+                <td><strong class="color-safe">GRANTED</strong>. Available becomes [2, 3, 0]. Safe sequence: <span class="code-font">P1 ➔ P3 ➔ P4 ➔ P0 ➔ P2</span></td>
+              </tr>
+              <tr>
+                <td><strong>TC-03</strong></td>
+                <td>Unsafe Resource Request</td>
+                <td>From TC-01, P4 requests Request = [3, 3, 0]</td>
+                <td>Request denied/deferred (insufficient available or unsafe)</td>
+                <td><strong class="color-unsafe">DENIED / ROLLED BACK</strong>. State restored. Informs process must wait.</td>
+              </tr>
+              <tr>
+                <td><strong>TC-04</strong></td>
+                <td>Deadlock Detection</td>
+                <td>P1 & P2 hold resources needed by each other; Available = [0, 0, 0]</td>
+                <td>Deadlock identified; involved processes highlighted</td>
+                <td><strong class="color-deadlock">DEADLOCK DETECTED</strong>. Identified processes: P1, P2.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="doc-tab-content" id="tab-viva">
+          <h3>4. Viva / Defense Preparation Questions & Answers</h3>
+          <div class="viva-qa">
+            <p class="q">Q1: What is the difference between an Unsafe State and a Deadlocked State?</p>
+            <p class="a"><strong>Ans:</strong> An unsafe state is NOT necessarily a deadlock; it is a state from which a deadlock is possible if all processes request their maximum resources at once. A deadlocked state is a state where processes are actually stuck waiting for each other and cannot proceed.</p>
+          </div>
+          <div class="viva-qa">
+            <p class="q">Q2: What is the time complexity of Banker's Algorithm?</p>
+            <p class="a"><strong>Ans:</strong> For <em>n</em> processes and <em>m</em> resource types, the time complexity is <strong>O(m × n²)</strong>. In the worst case, we search through <em>n</em> processes, each needing <em>m</em> comparisons, repeated up to <em>n</em> times.</p>
+          </div>
+          <div class="viva-qa">
+            <p class="q">Q3: Why does Banker's Algorithm require processes to state their Maximum demand in advance?</p>
+            <p class="a"><strong>Ans:</strong> Banker's algorithm is an <em>avoidance</em> algorithm. To guarantee the system will never enter a state where resource exhaustion causes deadlock, the OS must know the upper bound of each process's resource needs beforehand.</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="printReportBtn">🖨️ Print / Save as PDF</button>
+        <button class="btn btn-primary" id="closeDocsModal2">Close Guide</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Script inclusion -->
+  <script src="simulator.js"></script>
+</body>
+</html>
